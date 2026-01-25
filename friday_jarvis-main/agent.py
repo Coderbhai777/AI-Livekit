@@ -1,41 +1,72 @@
 from dotenv import load_dotenv
-import webbrowser
-import subprocess
-import platform
-
-from livekit import agents
-from livekit.agents import AgentSession, Agent, RoomInputOptions
-from livekit.plugins import noise_cancellation, google
-
-from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
-from tools import get_weather, search_web, send_email, open_anything
-
 load_dotenv()
 
+from livekit import agents
+from livekit.agents import Agent, AgentSession, RoomInputOptions
+from livekit.plugins import google, noise_cancellation
 
-# ---------------------------
-# AGENT
-# ---------------------------
+# ---- IMPORT ALL TOOLS EXPLICITLY ----
+from tools import (
+    get_weather,
+    search_web,
+    send_email,
+    system_status,
+    check_internet,
+    current_time,
+    remember,
+    recall,
+    open_website_or_app,
+    open_file_or_folder,
+    play_music,
+    run_command,
+
+    # Ethical Network Tools
+    network_info,
+    active_connections,
+    listening_ports,
+    suspicious_connections,
+    local_port_awareness,
+    explain_network_risk,
+)
+
+from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
+
+
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
             instructions=AGENT_INSTRUCTION,
+
+            # ✅ GOOGLE REALTIME MODEL (STABLE)
             llm=google.beta.realtime.RealtimeModel(
-                voice="Puck",
+                voice="Aoede",
                 temperature=0.7,
             ),
+
+            # ✅ ALL TOOLS MUST BE LISTED HERE OR THEY WILL NEVER RUN
             tools=[
                 get_weather,
                 search_web,
                 send_email,
-                open_anything,   # 👈 NEW TOOL
+                play_music,
+                system_status,
+                check_internet,
+                current_time,
+                remember,
+                recall,
+                open_website_or_app,
+                open_file_or_folder,
+                run_command,
+                network_info,
+                active_connections,
+                listening_ports,
+                suspicious_connections,
+                local_port_awareness,
+                explain_network_risk,
             ],
         )
 
 
-# ---------------------------
-# ENTRYPOINT
-# ---------------------------
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession()
 
@@ -50,8 +81,9 @@ async def entrypoint(ctx: agents.JobContext):
 
     await ctx.connect()
 
+    # ✅ INITIAL GREETING
     await session.generate_reply(
-        instructions=SESSION_INSTRUCTION,
+        instructions=SESSION_INSTRUCTION
     )
 
 
@@ -59,3 +91,4 @@ if __name__ == "__main__":
     agents.cli.run_app(
         agents.WorkerOptions(entrypoint_fnc=entrypoint)
     )
+
